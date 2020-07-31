@@ -1,8 +1,11 @@
 package com.badgu.apiworkshop.controller;
 
+import com.atlassian.oai.validator.springmvc.InvalidRequestException;
+import com.atlassian.oai.validator.springmvc.InvalidResponseException;
 import com.badgu.apiworkshop.exception.TodoNotFoundException;
 import com.badgu.apiworkshop.model.ErrorInfo;
 import com.badgu.apiworkshop.model.Todo;
+import com.badgu.apiworkshop.model.ValidationErrorInfo;
 import com.badgu.apiworkshop.service.TodoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,7 +54,9 @@ public class TodoController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Todo Item Found"),
                     @ApiResponse(responseCode = "400", description = "Todo Item not found",
-                            content = @Content(schema = @Schema(implementation = ErrorInfo.class)))
+                            content = @Content(schema = @Schema(implementation = ErrorInfo.class))),
+                    @ApiResponse(responseCode = "422", description = "Request Validation Failed",
+                            content = @Content(schema = @Schema(implementation = ValidationErrorInfo.class)))
             })
     @Parameter(in = ParameterIn.PATH,
             name = "id",
@@ -67,7 +72,9 @@ public class TodoController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Todo Item Deleted"),
                     @ApiResponse(responseCode = "400", description = "Todo Item not found",
-                            content = @Content(schema = @Schema(implementation = ErrorInfo.class)))
+                            content = @Content(schema = @Schema(implementation = ErrorInfo.class))),
+                    @ApiResponse(responseCode = "422", description = "Request Validation Failed",
+                            content = @Content(schema = @Schema(implementation = ValidationErrorInfo.class)))
             })
     @Parameter(in = ParameterIn.PATH,
             name = "id",
@@ -79,9 +86,12 @@ public class TodoController {
     }
 
     @RequestMapping(value = "/todos", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create Todo",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Todo Item Created")
+                    @ApiResponse(responseCode = "201", description = "Todo Item Created"),
+                    @ApiResponse(responseCode = "422", description = "Request Validation Failed",
+                            content = @Content(schema = @Schema(implementation = ValidationErrorInfo.class)))
             })
     public Todo addTodo(@RequestBody @NotNull @Valid Todo todo) {
         return this.todoService.addTodo(todo);
@@ -89,11 +99,30 @@ public class TodoController {
 
     @ExceptionHandler(TodoNotFoundException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorInfo handleTodoNotFoundException(HttpServletRequest req, Exception ex) {
-        TodoNotFoundException exception = (TodoNotFoundException) ex;
+    public ErrorInfo handleTodoNotFoundException(HttpServletRequest req, TodoNotFoundException ex) {
         return new ErrorInfo(
                 req.getRequestURL().toString(),
-                String.format("Todo with id %s not found", exception.getId())
+                String.format("Todo with id %s not found", ex.getId())
+        );
+    }
+
+    @ExceptionHandler(InvalidRequestException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    public ValidationErrorInfo handleInvalidRequestException(HttpServletRequest req, InvalidRequestException ex) {
+        return new ValidationErrorInfo(
+                req.getRequestURL().toString(),
+                "Request Validation Failed",
+                new ValidationErrorInfo.ValidationErrorReport(ex.getValidationReport().getMessages())
+        );
+    }
+
+    @ExceptionHandler(InvalidResponseException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ValidationErrorInfo handleInvalidRequestException(HttpServletRequest req, InvalidResponseException ex) {
+        return new ValidationErrorInfo(
+                req.getRequestURL().toString(),
+                "Response Validation Failed",
+                new ValidationErrorInfo.ValidationErrorReport(ex.getValidationReport().getMessages())
         );
     }
 

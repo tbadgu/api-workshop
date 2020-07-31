@@ -2,10 +2,10 @@ package com.badgu.apiworkshop.model;
 
 
 public class ErrorInfo {
-    private String requestUrl;
-    private String description;
+    protected String requestUrl;
+    protected String description;
 
-    public ErrorInfo() {
+    protected ErrorInfo() {
     }
 
     public ErrorInfo(String requestUrl, String description) {

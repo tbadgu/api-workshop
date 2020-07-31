@@ -64,7 +64,6 @@ test {
 
 openApi {
 	apiDocsUrl.set("http://localhost:8080/v3/api-docs")
-	outputDir.set(file("$buildDir/docs"))
+	outputDir.set(file("$buildDir/resources/main"))
 	forkProperties.set("-Dspring.profiles.active=generateSpec")
 }
-

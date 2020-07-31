@@ -4,9 +4,8 @@ import com.atlassian.oai.validator.springmvc.OpenApiValidationFilter;
 import com.atlassian.oai.validator.springmvc.OpenApiValidationInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -17,14 +16,13 @@ import java.io.IOException;
 
 @Configuration
 @EnableWebMvc
-@Lazy
 @Profile("!generateSpec")
 public class OpenApiValidatorConfig implements WebMvcConfigurer {
     private final OpenApiValidationInterceptor validationInterceptor;
 
     public OpenApiValidatorConfig() throws IOException {
         final EncodedResource specResource = new EncodedResource(
-                new FileSystemResource("D:/Shadows/api-workshop/apiworkshop/build/docs/openapi.json"),
+                new ClassPathResource("openapi.json"),
                 "UTF-8");
         this.validationInterceptor = new OpenApiValidationInterceptor(specResource);
     }
